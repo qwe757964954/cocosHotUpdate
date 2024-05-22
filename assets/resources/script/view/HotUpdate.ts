@@ -2,6 +2,7 @@
 import { Component, Label, Node, ProgressBar, _decorator, game, sys } from "cc";
 import { AlertView } from "./AlertView";
 import { Hot, HotOptions } from "./Hot";
+import { ManifestFileMgr } from "./ManifestFileMgr";
 
 const { ccclass, property } = _decorator;
 
@@ -26,7 +27,7 @@ export class HotUpdate extends Component {
     async onLoad() {
         if (sys.isNative) {
             this.tips_text.string = "检查更新中.....";
-            // await ManifestFileMgr.instance().modifyProjectAppLoadUrlForManifestFile();
+            await ManifestFileMgr.instance().modifyProjectAppLoadUrlForManifestFile();
             // await ManifestFileMgr.instance().modifyVersionAppLoadUrlForManifestFile();
             this.startHotUpdate();
         }

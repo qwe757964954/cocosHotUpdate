@@ -44,7 +44,7 @@ export class Hot {
     }
 
     /** 热更初始化 */
-    async init(opt: HotOptions) {
+    init(opt: HotOptions) {
         if (!sys.isNative) {
             return;
         }
@@ -56,23 +56,21 @@ export class Hot {
         if (this.assetsMgr) {
             return;
         }
+
         ResLoader.instance.load('project', (err: Error | null, res: any) => {
             if (err) {
                 error("【热更新界面】缺少热更新配置文件");
                 return;
             }
+
             this.showSearchPath();
+
             this.manifest = res.nativeUrl;
-            // let newManifestPath = ManifestFileMgr.instance().checkLoadManifestPath(this.manifest);
-            /**将文件存储在其他位置 */
-            
             this.storagePath = `${native.fileUtils.getWritablePath()}hailang_hot_update`;
-            // let localMinifestUrl = `${native.fileUtils.getWritablePath()}hailang_hot_minifest/project.manifest`;
-            // let loadManifest = native.fileUtils.getStringFromFile(`${localMinifestUrl}`)
-            // console.log('loadManifest__________________: ',loadManifest);
-            // let projectManifest = JSON.parse(loadManifest);
-            // console.log('loadManifest__________________2: ',JSON.stringify(projectManifest));
-            this.assetsMgr = new native.AssetsManager(this.manifest, this.storagePath, (versionA, versionB) => {
+            let minifestStoragePath = `${native.fileUtils.getWritablePath()}hailang_hot_minifest`;
+            let localManifestPath = `${minifestStoragePath}/project.manifest`;
+            console.log("【热更新】本地manifest路径: " + localManifestPath);
+            this.assetsMgr = new native.AssetsManager(localManifestPath , this.storagePath, (versionA, versionB) => {
                 console.log("【热更新】客户端版本: " + versionA + ', 当前最新版本: ' + versionB);
                 this.options?.onVersionInfo && this.options.onVersionInfo({ local: versionA, server: versionB });
 
@@ -107,24 +105,16 @@ export class Hot {
 
                 return true;
             });
-            /*
-            let loadManifest = native.fileUtils.getStringFromFile(`${localMinifestUrl}`)
-            console.log('loadManifest__________________: ',loadManifest);
-            let projectManifest = JSON.parse(loadManifest);
-            console.log('loadManifest__________________: ',JSON.stringify(projectManifest));
-            var manifest = new native.Manifest(JSON.stringify(projectManifest), this.storagePath);
-            this.assetsMgr.loadLocalManifest(manifest,this.storagePath);
-            */
+
             var localManifest = this.assetsMgr.getLocalManifest();
             console.log('【热更新】热更资源存放路径: ' + this.storagePath);
             console.log('【热更新】本地资源配置路径: ' + this.manifest);
             console.log('【热更新】本地包地址: ' + localManifest.getPackageUrl());
             console.log('【热更新】远程 project.manifest 地址: ' + localManifest.getManifestFileUrl());
             console.log('【热更新】远程 version.manifest 地址: ' + localManifest.getVersionFileUrl());
-            
-            this.checkUpdate();
-        })
 
+            this.checkUpdate();
+        });
     }
 
     /** 删除热更所有存储文件 */
@@ -189,18 +179,15 @@ export class Hot {
                 }
                 break;
             case native.EventAssetsManager.UPDATE_FINISHED:
-                console.log('【热更新】更新完成');
                 this.onUpdateFinished();
                 break;
             default:
-                console.log('【热更新】更新失败',code, event.getMessage());
                 this.onUpdateFailed(code);
                 break;
         }
     }
 
     private onUpdateFailed(code: any) {
-        this.assetsMgr.downloadFailedAssets();
         this.assetsMgr.setEventCallback(null!)
         this.options?.onUpdateFailed && this.options.onUpdateFailed(code);
     }
